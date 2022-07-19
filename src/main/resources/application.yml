@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/horse_manager
+
+jwt:
+  secret: "vanhieu"
+  expirationDateInMs: 600000
+  refreshExpirationDateInMs: 1200000
