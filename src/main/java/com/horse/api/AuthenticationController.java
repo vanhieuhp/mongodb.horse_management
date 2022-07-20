@@ -53,7 +53,7 @@ public class AuthenticationController {
 
             authenticationManager.authenticate(authentication);
         } catch (Exception e) {
-            throw new UnauthorizedException("Unauthorized");
+            throw new UnauthorizedException("Username or password is incorrect");
         }
 
         String authority = accountService.getAuthoritiesOfAccount(authenticationRequest.getUsername());

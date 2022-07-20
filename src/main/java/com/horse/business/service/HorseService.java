@@ -9,8 +9,8 @@ public interface HorseService {
 
     List<HorseResponse> findAll();
     List<HorseResponse> findByTrainerAndDate(Integer TrainerId, Integer year);
-    HorseResponse getOne(Integer id);
+    HorseResponse findOne(String id);
     HorseResponse createHorse(HorseRequest horseRequest);
-    HorseResponse updateHorse(Integer id, HorseRequest horseRequest);
-    void deleteHorse(Integer id);
+    HorseResponse updateHorse(String id, HorseRequest horseRequest);
+    void deleteHorse(String id);
 }

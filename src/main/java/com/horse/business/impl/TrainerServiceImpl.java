@@ -9,10 +9,12 @@ import com.horse.data.repository.account.AccountRepository;
 import com.horse.data.repository.trainer.TrainerRepository;
 import com.horse.exception.DataConflictException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class TrainerServiceImpl implements TrainerService {
@@ -26,36 +28,65 @@ public class TrainerServiceImpl implements TrainerService {
     @Override
     public TrainerResponse createTrainer(TrainerRequest trainerRequest) {
 
-        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!account.getTrainers().isEmpty()) {
+        Account currentAccount = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentAccount.getTrainerInfo() != null) {
             throw new DataConflictException("An trainer account just only have one trainer");
         }
 
-        Trainer trainer = new Trainer(trainerRequest.getName(), trainerRequest.getAge(), trainerRequest.getGender(), trainerRequest.getAddress());
-        trainer.setCreatedAt(new Date());
+        // set info for trainerInfo
+        Trainer trainerInfo = new Trainer();
+        trainerInfo.setName(trainerRequest.getName());
+        trainerInfo.setAge(trainerRequest.getAge());
+        trainerInfo.setGender(trainerRequest.getGender());
+        trainerInfo.setAddress(trainerRequest.getAddress());
 
-        Trainer createdTrainer = trainerRepository.save(trainer);
-        account.setTrainerInfo(createdTrainer);
-        account.setModifiedAt(new Date());
-        accountRepository.save(account);
+        // saving trainerInfo into mongodb
+        currentAccount.setTrainerInfo(trainerInfo);
+        currentAccount.setModifiedAt(new Date());
+        Account modifiedAccount = accountRepository.save(currentAccount);
 
-        return new TrainerResponse(createdTrainer.getId(), createdTrainer.getName(), createdTrainer.getAge(),
-                createdTrainer.getGender(), createdTrainer.getAddress(), createdTrainer.getCreatedAt());
-
-    }
-
-    @Override
-    public TrainerResponse updateTrainer(Integer trainerId, TrainerRequest trainerRequest) {
-        return null;
-    }
-
-    @Override
-    public void deleteTrainer(Integer id) {
+        // responding data for front end
+        return getTrainerResponse(modifiedAccount);
 
     }
 
     @Override
-    public TrainerResponse getOne(Integer id) {
-        return null;
+    public TrainerResponse updateTrainer(TrainerRequest trainerRequest) {
+
+        Account currentAccount = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Trainer trainer = currentAccount.getTrainerInfo();
+        if (trainerRequest.getName() != null) {
+            trainer.setName(trainerRequest.getName());
+        }
+
+        if (trainerRequest.getAge() != null) {
+            trainer.setAge(trainerRequest.getAge());
+        }
+
+        if (trainerRequest.getGender() != null) {
+            trainer.setGender(trainerRequest.getGender());
+        }
+
+        if (trainerRequest.getAddress() != null) {
+            trainer.setAddress(trainerRequest.getAddress());
+        }
+
+        currentAccount.setTrainerInfo(trainer);
+        currentAccount.setModifiedAt(new Date());
+
+        Account modifiedAccount = accountRepository.save(currentAccount);
+        return getTrainerResponse(modifiedAccount);
+    }
+
+    public TrainerResponse getTrainerResponse(Account account) {
+
+        TrainerResponse trainerResponse = TrainerResponse.builder().id(account.getId()).name(account.getTrainerInfo().getName())
+                        .age(account.getTrainerInfo().getAge()).address(account.getTrainerInfo().getAddress())
+                        .gender(account.getTrainerInfo().getGender()).createdAt(account.getCreatedAt()).build();
+        if (account.getModifiedAt() != null) {
+            trainerResponse.setModifiedAt(account.getModifiedAt());
+        }
+        return trainerResponse;
     }
 }

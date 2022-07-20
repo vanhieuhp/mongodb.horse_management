@@ -56,7 +56,7 @@ public class WebConfiguration extends WebSecurityConfigurerAdapter {
         http.authorizeRequests().antMatchers("/horses/**").hasAuthority("USER");
         http.authorizeRequests().anyRequest().authenticated();
 
-        http.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint);
+//        http.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint);
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 

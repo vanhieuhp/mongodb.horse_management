@@ -1,29 +1,21 @@
 package com.horse.data.dto.trainer;
 
-import com.horse.data.dto.AbstractResponseDTO;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 
-@Data
-@NoArgsConstructor
-public class TrainerResponse extends AbstractResponseDTO {
+@Getter
+@Setter
+@Builder
+public class TrainerResponse{
 
+    private String id;
     private String name;
     private Integer age;
     private String gender;
     private String address;
-
-    private List<String> horses;
-
-    public TrainerResponse(String id, String name, Integer age, String gender, String address, Date createdAt) {
-        this.setId(id);
-        this.setName(name);
-        this.setAge(age);
-        this.setGender(gender);
-        this.setAddress(address);
-        this.setCreatedAt(createdAt);
-    }
+    private Map<String, String> horses;
+    private Date createdAt;
+    private Date modifiedAt;
 }

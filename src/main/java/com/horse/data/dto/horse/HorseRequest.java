@@ -15,8 +15,5 @@ public class HorseRequest {
     @NotNull(message = "Foaled should not be null")
     private Date foaled;
 
-    @NotNull(message = "TrainerID should not be null")
-    private Integer trainerId;
-
     private Integer price;
 }
