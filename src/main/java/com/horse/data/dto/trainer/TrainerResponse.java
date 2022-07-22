@@ -1,9 +1,11 @@
 package com.horse.data.dto.trainer;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
-import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -15,7 +17,7 @@ public class TrainerResponse{
     private Integer age;
     private String gender;
     private String address;
-    private Map<String, String> horses;
+    private Set<String> trainerHorses;
     private Date createdAt;
     private Date modifiedAt;
 }

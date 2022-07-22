@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 @Builder
@@ -13,5 +15,5 @@ public class TrainerInfoResponse {
     private Integer age;
     private String gender;
     private String address;
-
+    private Set<String> trainerHorses;
 }

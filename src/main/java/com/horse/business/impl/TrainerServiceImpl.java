@@ -9,18 +9,13 @@ import com.horse.data.repository.account.AccountRepository;
 import com.horse.data.repository.trainer.TrainerRepository;
 import com.horse.exception.DataConflictException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
 
 @Service
 public class TrainerServiceImpl implements TrainerService {
-
-    @Autowired
-    private TrainerRepository trainerRepository;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -30,7 +25,7 @@ public class TrainerServiceImpl implements TrainerService {
 
         Account currentAccount = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (currentAccount.getTrainerInfo() != null) {
-            throw new DataConflictException("An trainer account just only have one trainer");
+            throw new DataConflictException("One trainer account has only one trainer");
         }
 
         // set info for trainerInfo

@@ -17,5 +17,5 @@ public class Trainer{
     private Integer age;
     private String gender;
     private String address;
-    private Set<String> horse = new HashSet<>();
+    private Set<String> trainerHorses = new HashSet<>();
 }

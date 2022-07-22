@@ -17,9 +17,9 @@ public class Account extends BaseCollection {
     private String username;
     private String password;
     private Trainer trainerInfo;
-    private Map<String, String> hiredTrainers = new HashMap<>();
+    private Set<String> hiredTrainers = new HashSet<>();
     private Role role;
-    private Map<String, String> horses = new HashMap<>();
+    private Set<String> ownerHorses = new HashSet<>();
 
     public static Account getCurrentAccount() {
         return (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

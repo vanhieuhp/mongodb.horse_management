@@ -1,14 +1,19 @@
 package com.horse.api;
 
 import com.horse.business.service.HorseService;
+import com.horse.data.collection.Horse;
 import com.horse.data.dto.horse.HorseRequest;
 import com.horse.data.dto.horse.HorseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -49,6 +54,30 @@ public class HorseController {
     public ResponseEntity<?> findAll() {
 
         List<HorseResponse> horseResponseList = horseService.findAll();
+        return new ResponseEntity<>(horseResponseList, HttpStatus.OK);
+    }
+
+    @GetMapping("/filters/price")
+    public ResponseEntity<?> findAllByPrice(HttpServletRequest request) {
+
+        Integer price = null;
+        if (request.getParameter("price") != null) {
+            price = Integer.valueOf(request.getParameter("price"));
+        }
+        List<Horse> horses = horseService.findAllByPrice(price);
+        return new ResponseEntity<>(horses, HttpStatus.OK);
+    }
+
+    @GetMapping("/filters")
+    public ResponseEntity<?> findByTrainerIdAndYear(@RequestParam(value = "trainerId", defaultValue = "") String trainerId,
+                                                    @RequestParam(value = "year", defaultValue = "0") Integer year) {
+
+        List<HorseResponse> horseResponseList;
+        if (trainerId.equals("") && year == 0) {
+            horseResponseList = horseService.findAll();
+        } else {
+            horseResponseList = horseService.findByTrainerAndYear(trainerId, year);
+        }
         return new ResponseEntity<>(horseResponseList, HttpStatus.OK);
     }
 }

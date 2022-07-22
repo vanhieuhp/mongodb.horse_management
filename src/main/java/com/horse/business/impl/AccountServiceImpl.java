@@ -4,7 +4,6 @@ import com.horse.business.service.AccountService;
 import com.horse.data.collection.Account;
 import com.horse.data.collection.Horse;
 import com.horse.data.collection.Role;
-import com.horse.data.collection.Trainer;
 import com.horse.data.dto.account.AccountRequest;
 import com.horse.data.dto.account.AccountResponse;
 import com.horse.data.dto.account.PageInfoRequest;
@@ -26,7 +25,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -110,7 +112,7 @@ public class AccountServiceImpl implements AccountService {
             return trainerAccounts.stream().map(account -> {
                 return TrainerResponse.builder().id(account.getId()).name(account.getTrainerInfo().getName())
                         .age(account.getTrainerInfo().getAge()).gender(account.getTrainerInfo().getGender())
-                        .address(account.getTrainerInfo().getAddress()).horses(account.getHorses())
+                        .address(account.getTrainerInfo().getAddress()).trainerHorses(account.getTrainerInfo().getTrainerHorses())
                         .createdAt(account.getCreatedAt()).modifiedAt(account.getModifiedAt()).build();
             }).collect(Collectors.toList());
         }
@@ -126,7 +128,7 @@ public class AccountServiceImpl implements AccountService {
         Account currentAccount = Account.getCurrentAccount();
 
         // check horse is existed in current Account
-        if (!currentAccount.getHorses().containsKey(horseId)) {
+        if (!currentAccount.getOwnerHorses().contains(horseId)) {
             throw new DataConflictException("Horse not found with id: " + horseId);
         }
 
@@ -136,28 +138,23 @@ public class AccountServiceImpl implements AccountService {
             throw new DataConflictException("Trainer not found with id: " + trainerId);
         }
 
-        // update data into horse Database
-        Horse horseNeedTraining = horseRepository.findById(horseId).orElseThrow(() -> new DataNotFoundException("Horse not found with id: " + horseId));
-        Map<String, String> trainerOfHorse = new HashMap<>();
-        trainerOfHorse.put(trainerAccount.getId(), trainerAccount.getTrainerInfo().getName());
-        horseNeedTraining.setTrainerOfHorse(trainerOfHorse);
-        horseNeedTraining.setModifiedAt(new Date());
-
         // update data into current Account
-        currentAccount.getHiredTrainers().put(trainerAccount.getId(), trainerAccount.getTrainerInfo().getName());
-        trainerAccount.getHorses().put(horseNeedTraining.getId(), horseNeedTraining.getName());
+        currentAccount.getHiredTrainers().add(trainerAccount.getId());
+        trainerAccount.getTrainerInfo().getTrainerHorses().add(horseId);
 
-        Horse modifiedHorse = horseRepository.save(horseNeedTraining);
         accountRepository.save(currentAccount);
         accountRepository.save(trainerAccount);
+        Horse horse = horseRepository.findById(horseId).orElseThrow(() -> new DataNotFoundException("Horse not found with id: " + horseId));
 
         return HiredTrainerResponse.builder()
                         .accountId(currentAccount.getId()).username(currentAccount.getUsername())
                         .trainerId(trainerAccount.getId()).trainerName(trainerAccount.getTrainerInfo().getName())
-                        .horseId(horseNeedTraining.getId()).horseName(horseNeedTraining.getName())
+                        .horseId(horseId).horseName(horse.getName())
                         .createdAt(new Date()).build();
     }
 
+
+    // pagination
     @Override
     public Map<String, Object> findAll(PageInfoRequest pageInfoRequest) {
         Map<String, Object> response = new HashMap<>();
@@ -187,15 +184,17 @@ public class AccountServiceImpl implements AccountService {
 
         // set trainerInfo for trainerAccount
         if ("TRAINER".equals(account.getRole().getCode()) && account.getTrainerInfo() != null) {
-            TrainerInfoResponse trainerInfo = TrainerInfoResponse.builder().name(account.getTrainerInfo().getName())
-                            .address(account.getTrainerInfo().getAddress()).age(account.getTrainerInfo().getAge())
-                            .gender(account.getTrainerInfo().getGender()).build();
+            TrainerInfoResponse trainerInfo = TrainerInfoResponse.builder()
+                    .name(account.getTrainerInfo().getName()).address(account.getTrainerInfo().getAddress())
+                    .age(account.getTrainerInfo().getAge()).gender(account.getTrainerInfo().getGender())
+                    .trainerHorses(account.getTrainerInfo().getTrainerHorses())
+                    .build();
 
             accountResponse.setTrainerInfo(trainerInfo);
         }
 
-        if (!account.getHorses().isEmpty()) {
-            accountResponse.setHorses(account.getHorses());
+        if (!account.getOwnerHorses().isEmpty()) {
+            accountResponse.setOwnerHorses(account.getOwnerHorses());
         }
 
         return accountResponse;
