@@ -2,7 +2,6 @@ package com.horse.data.repository.horse;
 
 import com.horse.data.collection.Account;
 import com.horse.data.collection.Horse;
-import com.horse.data.repository.account.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -20,45 +19,21 @@ public class HorseRepositoryImpl implements HorseCustomRepository {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-
     @Override
-    public List<Horse> findByTrainerIdAndYear(String trainerId, Integer year) {
-
-        Account account = accountRepository.findById(trainerId)
-                .orElse(null);
+    public List<Horse> findByTrainerAndYear(Account trainer, Integer year){
 
         List<Horse> results = new ArrayList<>();
-        AggregationOperation yearMatch = null;
-        AggregationOperation yearField = null;
-        if (year != 0) {
-            yearField = Aggregation.addFields().addField("year").withValue(DateOperators.Year.yearOf("foaled")).build();
-            yearMatch = Aggregation.match(new Criteria("year").is(year));
-        }
+        Set<String> trainerHorseId = trainer.getTrainerInfo().getTrainerHorses();
 
-        // search horses without trainerId
-        if (account == null) {
-            Aggregation aggregation = Aggregation.newAggregation(yearField, yearMatch);
-            results = mongoTemplate.aggregate(aggregation, "horse", Horse.class).getMappedResults();
-        } else {
+        for (String horseId : trainerHorseId) {
+            Aggregation aggregation = Aggregation.newAggregation(Aggregation.match(new Criteria("_id").is(horseId)),
+                    Aggregation.addFields().addField("year").withValue(DateOperators.Year.yearOf("foaled")).build(),
+                    Aggregation.match(new Criteria("year").is(year)));
 
-            Set<String> trainerHorseId = account.getTrainerInfo().getTrainerHorses();
+            AggregationResults<Horse> aggregationResults = mongoTemplate.aggregate(aggregation, "horse", Horse.class);
 
-            for (String horseId : trainerHorseId) {
-                Aggregation aggregation = Aggregation.newAggregation(Aggregation.match(new Criteria("_id").is(horseId)));
-
-                // check year before adding aggregation
-
-                if (year != 0) {
-                    aggregation.getPipeline().add(yearField).add(yearMatch);
-                }
-                AggregationResults<Horse> aggregationResults = mongoTemplate.aggregate(aggregation, "horse", Horse.class);
-
-                if (aggregationResults.getUniqueMappedResult() != null) {
-                    results.add(aggregationResults.getUniqueMappedResult());
-                }
+            if (aggregationResults.getUniqueMappedResult() != null) {
+                results.add(aggregationResults.getUniqueMappedResult());
             }
         }
 
@@ -66,13 +41,30 @@ public class HorseRepositoryImpl implements HorseCustomRepository {
     }
 
     @Override
-    public Horse findAllByName(Horse horse, String id) {
-
-        return null;
+    public List<Horse> findByYear(Integer year) {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.addFields().addField("year").withValue(DateOperators.Year.yearOf("foaled")).build(),
+                Aggregation.match(new Criteria("year").is(year)));
+        AggregationResults<Horse> aggregationResults = mongoTemplate.aggregate(aggregation, "horse", Horse.class);
+        return aggregationResults.getMappedResults();
     }
 
     @Override
-    public List<Horse> findAllByPrice(Integer price) {
+    public List<Horse> findByTrainer(Account trainer) {
+        List<Horse> results = new ArrayList<>();
+        Set<String> trainerHorseId = trainer.getTrainerInfo().getTrainerHorses();
+
+        for (String horseId : trainerHorseId) {
+            Aggregation aggregation = Aggregation.newAggregation(Aggregation.match(new Criteria("_id").is(horseId)));
+            AggregationResults<Horse> aggregationResults = mongoTemplate.aggregate(aggregation, "horse", Horse.class);
+            results.add(aggregationResults.getUniqueMappedResult());
+        }
+
+        return results;
+    }
+
+    @Override
+    public List<Horse> findByPrice(Integer price) {
 
         MatchOperation matchOperation = Aggregation.match(Criteria.where("price").is(price));
 
@@ -80,12 +72,8 @@ public class HorseRepositoryImpl implements HorseCustomRepository {
 
         Aggregation aggregation = Aggregation.newAggregation(matchOperation, sortOperation);
 
-        AggregationResults output = mongoTemplate.aggregate(aggregation, "horse", Horse.class);
+        AggregationResults<Horse> output = mongoTemplate.aggregate(aggregation, "horse", Horse.class);
         return output.getMappedResults();
-    }
-
-    public AggregationOperation getHorseIdMatch(String id) {
-        return Aggregation.match(new Criteria("_id").is(id));
     }
 
 }

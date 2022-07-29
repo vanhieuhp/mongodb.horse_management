@@ -13,9 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,11 +36,46 @@ public class HorseServiceImpl implements HorseService {
 
     @Override
     public List<HorseResponse> findByTrainerAndYear(String trainerId, Integer year) {
+        Account trainer = accountRepository.findById(trainerId).orElse(null);
 
-        List<Horse> horseList = horseRepository.findByTrainerIdAndYear(trainerId, year);
+        Set<Horse> temp = new HashSet<>();
         List<HorseResponse> horseResponseList = new ArrayList<>();
+        List<Horse> trainerHorse = new ArrayList<>();
+        List<Horse> yearHorse = new ArrayList<>();
 
-        for (Horse horse : horseList) {
+        if (trainer != null) {
+            trainerHorse = horseRepository.findByTrainer(trainer);
+            temp.addAll(trainerHorse);
+        }
+
+        if (year != 0) {
+            yearHorse = horseRepository.findByYear(year);
+            temp.addAll(yearHorse);
+        }
+
+        List<Horse> filterHorse = new ArrayList<>(temp);
+
+        if(!trainerHorse.isEmpty()) {
+            for (int i = filterHorse.size()-1; i > 0; i--) {
+                if (!trainerHorse.contains(filterHorse.get(i))) {
+                    filterHorse.remove(i);
+                }
+            }
+        }
+
+        if(!yearHorse.isEmpty()) {
+            for (int i = filterHorse.size()-1; i > 0; i--) {
+                if (!yearHorse.contains(filterHorse.get(i))) {
+                    filterHorse.remove(i);
+                }
+            }
+        }
+
+        if (trainer == null && year == 0) {
+            filterHorse = horseRepository.findAll();
+        }
+
+        for (Horse horse : filterHorse) {
             horseResponseList.add(getHorseResponse(horse));
         }
 
@@ -123,7 +156,7 @@ public class HorseServiceImpl implements HorseService {
 
     @Override
     public List<Horse> findAllByPrice(Integer price) {
-        return horseRepository.findAllByPrice(price);
+        return horseRepository.findByPrice(price);
     }
 
     private HorseResponse getHorseResponse(Horse horse) {

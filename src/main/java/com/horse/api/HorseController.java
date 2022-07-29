@@ -72,12 +72,7 @@ public class HorseController {
     public ResponseEntity<?> findByTrainerIdAndYear(@RequestParam(value = "trainerId", defaultValue = "") String trainerId,
                                                     @RequestParam(value = "year", defaultValue = "0") Integer year) {
 
-        List<HorseResponse> horseResponseList;
-        if (trainerId.equals("") && year == 0) {
-            horseResponseList = horseService.findAll();
-        } else {
-            horseResponseList = horseService.findByTrainerAndYear(trainerId, year);
-        }
+        List<HorseResponse> horseResponseList = horseService.findByTrainerAndYear(trainerId, year);
         return new ResponseEntity<>(horseResponseList, HttpStatus.OK);
     }
 }
